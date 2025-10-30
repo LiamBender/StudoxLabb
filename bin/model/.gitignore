@@ -1,0 +1,15 @@
+/Booking.class
+/Course.class
+/CourseTime.class
+/Grade.class
+/Program.class
+/ProgramRegister.class
+/Student.class
+/Teacher.class
+/User.class
+/Database.class
+/StudentDAO.class
+/CourseDAO.class
+/EnrollmentDAO.class
+/EnrollmentService.class
+/UserDAO.class
