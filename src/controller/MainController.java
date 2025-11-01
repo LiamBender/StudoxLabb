@@ -496,7 +496,137 @@ public class MainController {
             return List.of("Fel vid hämtning: " + ex.getMessage());
         }
     }
+    
+    
+    
+    
+ // ====== Sökning via personnummer (elev eller lärare) ======
 
+    /** Returnerar "ELEV" om PNR finns i students, "LARARE" om i teachers, annars tom. */
+    private String resolveRoleByPnr(Connection con, String pnr) throws SQLException {
+        try (var ps = con.prepareStatement("SELECT 1 FROM students WHERE personnummer = ?")) {
+            ps.setString(1, pnr);
+            try (var rs = ps.executeQuery()) {
+                if (rs.next()) return "ELEV";
+            }
+        }
+        try (var ps = con.prepareStatement("SELECT 1 FROM teachers WHERE personnummer = ?")) {
+            ps.setString(1, pnr);
+            try (var rs = ps.executeQuery()) {
+                if (rs.next()) return "LARARE";
+            }
+        }
+        return "";
+    }
+
+    /** Hjälpmetod: formaterar rad "CODE – Name (X p)" ev. med resultat i [BRACKETS]. */
+    private String formatCourseRow(String code, String name, Double pointsOrNull, String resultOrNull) {
+        String pts = pointsOrNull == null ? null :
+                (Math.floor(pointsOrNull) == pointsOrNull ? String.format("%.0f", pointsOrNull) : String.format("%.1f", pointsOrNull));
+        String tail = "";
+        if (pts != null) tail += " (" + pts + " p)";
+        if (resultOrNull != null) tail += " [" + resultOrNull + "]";
+        return code + " – " + name + tail;
+    }
+
+    /** Kurser för elev-PNR (hämtar ev. poäng från senaste kurstillfälle + elevens resultat). */
+    private List<String> listCoursesForStudentPnr(Connection con, String pnr) throws SQLException {
+        String sql = """
+            SELECT c.code, c.name,
+                   COALESCE((
+                       SELECT k.hogskolepoang
+                       FROM kurstillfallen k
+                       WHERE k.kurskod = c.code
+                       ORDER BY k.artal DESC
+                       LIMIT 1
+                   ), 0) AS points,
+                   e.result
+            FROM course_enrollments e
+            JOIN students s ON s.id = e.student_id
+            JOIN courses  c ON c.id = e.course_id
+            WHERE s.personnummer = ?
+            ORDER BY c.code
+            """;
+        try (var ps = con.prepareStatement(sql)) {
+            ps.setString(1, pnr);
+            try (var rs = ps.executeQuery()) {
+                List<String> out = new ArrayList<>();
+                while (rs.next()) {
+                    out.add(formatCourseRow(
+                            rs.getString("code"),
+                            rs.getString("name"),
+                            rs.getDouble("points"),
+                            rs.getString("result")));
+                }
+                return out;
+            }
+        }
+    }
+
+    /** Kurser för lärar-PNR (kurser läraren undervisar i). */
+    private List<String> listCoursesForTeacherPnr(Connection con, String pnr) throws SQLException {
+        String sql = """
+            SELECT c.code, c.name,
+                   COALESCE((
+                       SELECT k.hogskolepoang
+                       FROM kurstillfallen k
+                       WHERE k.kurskod = c.code
+                       ORDER BY k.artal DESC
+                       LIMIT 1
+                   ), 0) AS points
+            FROM course_teachers ct
+            JOIN teachers t ON t.id = ct.teacher_id
+            JOIN courses  c ON c.id = ct.course_id
+            WHERE t.personnummer = ?
+            ORDER BY c.code
+            """;
+        try (var ps = con.prepareStatement(sql)) {
+            ps.setString(1, pnr);
+            try (var rs = ps.executeQuery()) {
+                List<String> out = new ArrayList<>();
+                while (rs.next()) {
+                    out.add(formatCourseRow(
+                            rs.getString("code"),
+                            rs.getString("name"),
+                            rs.getDouble("points"),
+                            null));
+                }
+                return out;
+            }
+        }
+    }
+
+    /**
+     * Publik metod för GUI: skriv in ett personnummer (elev eller lärare)
+     * och få tillbaka en lista med rubrik + kurser.
+     */
+    public List<String> listCoursesByPersonnummer(String pnr) {
+        if (pnr == null || pnr.isBlank()) return List.of("Ange personnummer.");
+        try (var con = getConn()) {
+            String who = resolveRoleByPnr(con, pnr);
+            if (who.isEmpty()) {
+                return List.of("Hittade ingen elev eller lärare med personnummer: " + pnr);
+            }
+            List<String> rows = "ELEV".equals(who)
+                    ? listCoursesForStudentPnr(con, pnr)
+                    : listCoursesForTeacherPnr(con, pnr);
+
+            String header = "ELEV".equals(who) ? "Kurser för elev " : "Kurser för lärare ";
+            List<String> out = new ArrayList<>();
+            out.add(header + pnr + ":");
+            out.addAll(rows.isEmpty() ? List.of("(inga)") : rows);
+            return out;
+        } catch (SQLException ex) {
+            return List.of("Fel vid sökning: " + ex.getMessage());
+        }
+    }
+
+    
+    
+    
+    
+    
+    
     public java.util.Optional<String> getCurrentStudentPnr() {
         if (!isStudent() || currentStudentId == null) return java.util.Optional.empty();
         String sql = "SELECT personnummer FROM students WHERE id = ?";

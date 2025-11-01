@@ -22,6 +22,13 @@ public class TeacherWindow extends JFrame {
     private final JButton btnClearResult = new JButton("Rensa");
 
     private final JLabel lblTotal = new JLabel("Totala poäng: 0");
+    
+ // === Sök via personnummer (elev/lärare) ===
+    private final JTextField tfLookupPnr = new JTextField(14);
+    private final JButton btnLookup = new JButton("Sök via personnummer");
+    private final DefaultListModel<String> lookupModel = new DefaultListModel<>();
+    private final JList<String> lstLookup = new JList<>(lookupModel);
+
 
     // Visning
     private final DefaultListModel<String> listModel = new DefaultListModel<>();
@@ -90,6 +97,27 @@ public class TeacherWindow extends JFrame {
         btnMarkPassed.addActionListener(e -> setResultForSelected("PASSED"));
         btnMarkFailed.addActionListener(e -> setResultForSelected("FAILED"));
         btnClearResult.addActionListener(e -> setResultForSelected(""));
+        
+        var pnlLookup = new JPanel(new BorderLayout(8,8));
+        var north = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        north.add(new JLabel("Personnummer:"));
+        north.add(tfLookupPnr);
+        north.add(btnLookup);
+        pnlLookup.add(north, BorderLayout.NORTH);
+
+        lstLookup.setVisibleRowCount(8);
+        pnlLookup.add(new JScrollPane(lstLookup), BorderLayout.CENTER);
+        pnlLookup.setBorder(BorderFactory.createTitledBorder("Sök: elev eller lärare"));
+
+        // Lägg panelen där det passar i ditt befintliga layout-träd:
+        center.add(pnlLookup, BorderLayout.SOUTH); // eller motsvarande
+
+        btnLookup.addActionListener(e -> {
+            String pnr = tfLookupPnr.getText().trim();
+            lookupModel.clear();
+            controller.listCoursesByPersonnummer(pnr).forEach(lookupModel::addElement);
+        });
+
     }
 
     private JComponent buildTeacherPanel() {

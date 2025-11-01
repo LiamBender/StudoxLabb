@@ -16,6 +16,13 @@ public class StudentWindow extends JFrame {
     private final JButton btnLeave = new JButton("Gå ur kurs");
     private final JButton btnList = new JButton("Visa mina kurser");
     private final JButton btnSchedule = new JButton("Visa schema (2025)");
+    
+ // === Sök via personnummer (elev/lärare) ===
+    private final JTextField tfLookupPnr = new JTextField(14);
+    private final JButton btnLookup = new JButton("Sök via personnummer");
+    private final DefaultListModel<String> lookupModel = new DefaultListModel<>();
+    private final JList<String> lstLookup = new JList<>(lookupModel);
+
 
     // Visning
     private final DefaultListModel<String> listModel = new DefaultListModel<>();
@@ -89,6 +96,32 @@ public class StudentWindow extends JFrame {
         // Start: visa mina kurser + totalsumma
         doListForStudent();
         updateMyTotalPoints();          // NYTT
+        
+        
+     // Panel: Sök via personnummer
+        var pnlLookup = new JPanel(new BorderLayout(8,8));
+        var north = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        north.add(new JLabel("Personnummer:"));
+        north.add(tfLookupPnr);
+        north.add(btnLookup);
+        pnlLookup.add(north, BorderLayout.NORTH);
+
+        lstLookup.setVisibleRowCount(8);
+        pnlLookup.add(new JScrollPane(lstLookup), BorderLayout.CENTER);
+        pnlLookup.setBorder(BorderFactory.createTitledBorder("Sök: elev eller lärare"));
+
+        /* Lägg pnlLookup i din befintliga container, t.ex.
+           main.add(pnlLookup, BorderLayout.SOUTH);
+           eller om du har Grid/Box, placera den där det passar logiskt.
+        */
+        
+        btnLookup.addActionListener(e -> {
+            String pnr = tfLookupPnr.getText().trim();
+            lookupModel.clear();
+            controller.listCoursesByPersonnummer(pnr).forEach(lookupModel::addElement);
+        });
+
+
     }
 
     private JComponent buildStudentPanel() {
