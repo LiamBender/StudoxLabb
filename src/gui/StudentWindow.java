@@ -110,10 +110,7 @@ public class StudentWindow extends JFrame {
         pnlLookup.add(new JScrollPane(lstLookup), BorderLayout.CENTER);
         pnlLookup.setBorder(BorderFactory.createTitledBorder("Sök: elev eller lärare"));
 
-        /* Lägg pnlLookup i din befintliga container, t.ex.
-           main.add(pnlLookup, BorderLayout.SOUTH);
-           eller om du har Grid/Box, placera den där det passar logiskt.
-        */
+        center.add(pnlLookup, BorderLayout.SOUTH);
         
         btnLookup.addActionListener(e -> {
             String pnr = tfLookupPnr.getText().trim();
