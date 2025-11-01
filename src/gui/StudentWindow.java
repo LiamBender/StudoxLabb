@@ -99,14 +99,14 @@ public class StudentWindow extends JFrame {
         
         
      // Panel: Sök via personnummer
-        var pnlLookup = new JPanel(new BorderLayout(8,8));
-        var north = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        var pnlLookup = new JPanel(new BorderLayout(4,4));
+        var north = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
         north.add(new JLabel("Personnummer:"));
         north.add(tfLookupPnr);
         north.add(btnLookup);
         pnlLookup.add(north, BorderLayout.NORTH);
 
-        lstLookup.setVisibleRowCount(8);
+        lstLookup.setVisibleRowCount(5);
         pnlLookup.add(new JScrollPane(lstLookup), BorderLayout.CENTER);
         pnlLookup.setBorder(BorderFactory.createTitledBorder("Sök: elev eller lärare"));
 
